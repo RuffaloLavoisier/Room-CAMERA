@@ -1,0 +1,12 @@
+<html>
+  <head>
+    <title>My Home Server Camera</title>
+  </head>
+  <body>
+    <h1>Sunghwan Video Camera</h1>
+    <img id="bg" src="{{ url_for('video_feed') }}">
+      <form method="post" action='/'>
+          <p>TURN L/R<input type="range" min="1" max="12.5" name="turnlr" value = 'send' onchange = 'this.form.submit()' /> </p>
+        </form>
+  </body>
+</html>
