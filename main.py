@@ -1,10 +1,11 @@
 #use git 2021 1 8 servo app and web control
 #go to folder and start python2
-#ip alarm and send photo 
+#ip alarm and send photo
+
 import cv2
 import sys
 #from mail import sendEmail
-from flask import Flask, render_template_string, Response, request,send_from_directory, send_file #, session
+from flask import Flask, render_template_string, Response, request, send_from_directory, send_file  # , session
 import RPi.GPIO as GPIO
 from camera import VideoCamera
 from flask_basicauth import BasicAuth
@@ -15,15 +16,19 @@ import time
 import datetime
 import threading
 import os
-from DeleteFile import delete_file 
+from DeleteFile import delete_file
 #from gpiozero import LEDBoard
 
-email_update_interval = 5 # sends an email only once in this time interval
-video_camera = VideoCamera(flip=True) # creates a camera object, flip vertically
+email_update_interval = 5  # sends an email only once in this time interval
+# creates a camera object, flip vertically
+video_camera = VideoCamera(flip=True)
 
-object_classifier1 = cv2.CascadeClassifier("models/facial_recognition_model.xml") # an opencv classifier
-object_classifier2 = cv2.CascadeClassifier("models/fullbody_recognition_model.xml") # an opencv classifier
-object_classifier3 = cv2.CascadeClassifier("models/uCpperbody_recognition_model.xml") # an opencv classifier
+object_classifier1 = cv2.CascadeClassifier(
+    "models/facial_recognition_model.xml")  # an opencv classifier
+object_classifier2 = cv2.CascadeClassifier(
+    "models/fullbody_recognition_model.xml")  # an opencv classifier
+object_classifier3 = cv2.CascadeClassifier(
+    "models/uCpperbody_recognition_model.xml")  # an opencv classifier
 
 # App Globals (do not edit)
 app = Flask(__name__)
@@ -31,36 +36,48 @@ app.config['BASIC_AUTH_USERNAME'] = '4321'
 app.config['BASIC_AUTH_PASSWORD'] = '1234'
 app.config['BASIC_AUTH_FORCE'] = False
 
+# dir
+
+#os.path.isdir
+
+Client_Download_Photo = "/save/save_file/client_download_photo"       # /save/save_file/client_download_photo
+Client_Download_Video = "/save/save_file/client_download_video"       # /save/save_file/client_download_video
+Save_All_Video        = "/save/save_file/save_all_video/"             # /save/save_file/save_all_video/
+Save_Detect_Video     = "/save/save_file/save_detect_video/"          # /save/save_file/save_detect_video/
+Save_Detect_P         = "/save/save_file/save_detect_photo/photo"     # /save/save_file/save_detect_photo/photo 
+Save_Detect_OP        = "/save/save_file/save_detect_photo/obj_photo" # /save/save_file/save_detect_photo/obj_photo
+
+
 flask_log = ''
 flask_ip_log = ""
 lock = threading.Lock
 thread_zoom_frame = None
-file_name=0
+file_name = 0
 GPIO.setwarnings(False)
 
 servo_pin = 12
-#led_pin = 
+#led_pin =
 freq = 50
 GPIO.setmode(GPIO.BOARD)
-GPIO.setup(servo_pin,GPIO.OUT)
+GPIO.setup(servo_pin, GPIO.OUT)
 #GPIO.setup(led_pin,GPIO.OUT)
 pwm = GPIO.PWM(servo_pin, freq)
 pwm.start(0)
 
 #led state
-led_state=0
+led_state = 0
 
-last_time=0
-video_time=10
-save_video_file=''
+last_time = 0
+video_time = 10
+save_video_file = ''
 basic_auth = BasicAuth(app)
 last_epoch = 0
 
-deadline = 3 #delete file deadline
+deadline = 3  # delete file deadline
 
-scale = 1 # need zoom 20210208 sunghwan
+scale = 1  # need zoom 20210208 sunghwan
 
-count =0
+count = 0
 log_value = ''
 
 set_fps = 25
@@ -69,10 +86,10 @@ set_fps = 25
 # path='/home/pi/drone_opencv_ardupilot/save/save_file/save_all_video/'
 
 consecFrames = 0
-all_rec_save=0
-state_all_rec=0
-rec_state=0
-user_choice_rec_start=0
+all_rec_save = 0
+state_all_rec = 0
+rec_state = 0
+user_choice_rec_start = 0
 
 #log type : text file,video(frame,obj) ,photo(frame,obj),print,web click
 #click video REC
@@ -80,95 +97,99 @@ user_choice_rec_start=0
 #we want save and send
 
 # 사용하지 않음
-def all_rec(): #Recording started when device first started
-	global  set_fps,all_rec_save,state_all_rec,scale #,thread_zoom_frame
-	while all_rec_save == 0 :
-		if state_all_rec == 0 : #if not rec
-			frame_read = video_camera.zoom_frame(scale,False)
+def all_rec():  # Recording started when device first started
+	global set_fps, all_rec_save, state_all_rec, scale  # ,thread_zoom_frame
+	while all_rec_save == 0:
+		if state_all_rec == 0:  # if not rec
+			frame_read = video_camera.zoom_frame(scale, False)
 			timestamp = datetime.datetime.now()
-			(h,w) = frame_read.shape[:2]
+			(h, w) = frame_read.shape[:2]
 			#print (h)
 			#print (w)
-			p = "{}/{}.mp4".format("/home/pi/drone_opencv_ardupilot/save/save_file/save_all_video", timestamp.strftime("%Y%m%d-%H%M%S"))
-			output_file = cv2.VideoWriter(p,cv2.VideoWriter_fourcc('M','J','P','G'), set_fps+60,(w,h), True)
+			p = "{}/{}.mp4".format("/home/pi/drone_opencv_ardupilot/save/save_file/save_all_video",
+			                       timestamp.strftime("%Y%m%d-%H%M%S"))
+			output_file = cv2.VideoWriter(p, cv2.VideoWriter_fourcc(
+			    'M', 'J', 'P', 'G'), set_fps+60, (w, h), True)
 			print("all save start")
 			state_all_rec = 1
-		elif state_all_rec == 1: #if start rec
-			frame_read = video_camera.zoom_frame(scale,False)
+		elif state_all_rec == 1:  # if start rec
+			frame_read = video_camera.zoom_frame(scale, False)
 			output_file.write(frame_read)
-			if  all_rec_save == 1:
+			if all_rec_save == 1:
 				break
 
 	if state_all_rec == 1:
 		output_file.release()
-		path='/home/pi/drone_opencv_ardupilot/save/save_file/save_all_video/'
-		delete_file(path,deadline)
-		print ("end")
+		path = '/home/pi/drone_opencv_ardupilot/save/save_file/save_all_video/'
+		delete_file(path, deadline)
+		print("end")
 		state_all_rec = 0
 # fix part
-def user_want_rec(): #Recording start when user clicked button
-    global user_choice_rec_start,save_video_file,scale,set_fps
+
+
+def user_want_rec():  # Recording start when user clicked button
+    global user_choice_rec_start, save_video_file, scale, set_fps,Client_Download_Video
     state_user_rec = 0
-    print ("user_rec_func")
+    print("user_rec_func")
     while True:
-        while user_choice_rec_start == 1 : #user clicked record button
+        while user_choice_rec_start == 1:  # user clicked record button
  #           print "in while"
-            if state_user_rec == 0 : #if not rec
+            if state_user_rec == 0:  # if not rec
                 #frame_read = video_camera.show_in_zoom(zoom(),False)
-                frame_read = video_camera.zoom_frame(scale,False)
+                frame_read = video_camera.zoom_frame(scale, False)
 
                 timestamp = datetime.datetime.now()
-                (h,w) = frame_read.shape[:2]
+                (h, w) = frame_read.shape[:2]
                 save_video_file = timestamp.strftime("%Y%m%d-%H%M%S")
-                print (save_video_file)
-                p = "{}/{}.mp4".format("/home/pi/drone_opencv_ardupilot/save/save_file/client_download_video", save_video_file) # save path
-                print (p)
-                output_file = cv2.VideoWriter(p,cv2.VideoWriter_fourcc('M','J','P','G'), set_fps+30,(w,h), True)
+                print(save_video_file)
+                # save path
+                p = "{}/{}.mp4".format(
+                    Client_Download_Video  # 사용자 지정 영상 파일 저장 경로 
+                    , save_video_file
+                    )
+                print(p)
+                output_file = cv2.VideoWriter(p, cv2.VideoWriter_fourcc(
+                    'M', 'J', 'P', 'G'), set_fps+30, (w, h), True)
    #             print("user save start")
                 state_user_rec = 1
-            elif state_user_rec == 1: #if start rec
+            elif state_user_rec == 1:  # if start rec
                 #frame_read = video_camera.show_in_zoom(zoom(),False)
-                frame_read = video_camera.zoom_frame(scale,False)
-
+                frame_read = video_camera.zoom_frame(scale, False)
                 output_file.write(frame_read)
-                if user_choice_rec_start == 0: #after user clicked save button
+                if user_choice_rec_start == 0:  # after user clicked save button
                     break
-#        print "not while"
+        #print "not while"
         if state_user_rec == 1:
             output_file.release()
             state_user_rec = 0
 
-# if detect save photo
+
 def check_for_obj_save_photo():
-	global scale
+	global scale,Save_Detect_OP,Save_Detect_P
 	while True:
-		frame, found_obj = video_camera.zoom_object(scale,object_classifier1,False)
-		if found_obj: # detect time
-			
+		frame, found_obj = video_camera.zoom_object(scale, object_classifier1, False)
+		if found_obj:  # detect time
+
             now = datetime.datetime.now().strftime("%m%d_%H%M%S")
 			
             #save detect frame
-            path = "/home/pi/drone_opencv_ardupilot/save/save_file/save_detect_photo/obj_photo/" #if check obj save but just frame
-			file_save_name = path + str(now) + '_obj_frame' + '.png'
+              #if check obj save but just frame
+			file_save_name = Save_Detect_OP + str(now) + '_obj_frame' + '.png'
 			test_img = frame #get obj
 			cv2.imwrite(file_save_name,test_img) #save file
 			print (file_save_name)
-            delete_file(path,deadline)
+            delete_file(Save_Detect_OP,deadline)
 
             #save normal frame
-			path = "/home/pi/drone_opencv_ardupilot/save/save_file/save_detect_photo/photo/" #if check obj save but just frame
-			file_save_name = path + str(now) + '_get_frame' + '.png'
+			file_save_name = Save_Detect_P + str(now) + '_get_frame' + '.png'
 			test_img = video_camera.zoom_frame(scale,False) #get frame
 			cv2.imwrite(file_save_name,test_img)
 			print (file_save_name)
-			delete_file(path,deadline)
-
-
-
+			delete_file(Save_Detect_P,deadline)
 
 # if detect 5 sec rec mode
 def check_for_objects(): #version : detect mode/normal mode 
-	global last_epoch, found_obj,consecFrames,sale,set_fps
+	global last_epoch, found_obj,consecFrames,sale,set_fps,Save_Detect_Video
 	state=0
 	while True:
 		frame, found_obj = video_camera.zoom_object(scale,object_classifier1,False)
@@ -176,9 +197,10 @@ def check_for_objects(): #version : detect mode/normal mode
 			frame_read = frame
 			timestamp = datetime.datetime.now()
 			(h,w) = frame_read.shape[:2]
-			p = "{}/{}.mp4".format("/home/pi/drone_opencv_ardupilot/save/save_file/save_detect_video", 
-				timestamp.strftime("%Y%m%d-%H%M%S"))
-			output_file = cv2.VideoWriter(p,cv2.VideoWriter_fourcc('M','J','P','G'), 10,(w,h), True)
+			DetectVideoFile = "{}/{}.mp4".format(
+                Save_Detect_Video # 겍체 탐지하였을 때 자동 저장 디렉토리
+                ,timestamp.strftime("%Y%m%d-%H%M%S"))
+			output_file = cv2.VideoWriter(DetectVideoFile,cv2.VideoWriter_fourcc('M','J','P','G'), 10,(w,h), True)
 			print("save start")
 
 			prev = time.time()
@@ -187,8 +209,7 @@ def check_for_objects(): #version : detect mode/normal mode
 				output_file.write(frame)
 			output_file.release()
 			print ("detect release !")
-			path='/home/pi/drone_opencv_ardupilot/save/save_file/save_detect_video/'
-			delete_file(path,deadline)
+			delete_file(Save_Detect_Video,deadline) # 파일 용량 관리 오래된 로그 파일 삭제 
 
 #		except:
 			#print "error"
@@ -311,7 +332,6 @@ TPL = '''
 	<!--USELESS-->
 </body>
 </html>
-
 '''
 
 @app.route('/')
@@ -323,9 +343,14 @@ def index():
 	log_msg()
 	#session.clear()
 	rec_state = ''
-	return render_template_string(TPL,user_choice_rec_start=user_choice_rec_start,rec_state=rec_state,scale=scale)
+	return render_template_string(
+        TPL
+        ,user_choice_rec_start=user_choice_rec_start
+        ,rec_state=rec_state
+        ,scale=scale
+    )
 
-def log_msg():
+def log_msg(): # draw ip address
 	global flask_ip_log 
 	time = datetime.datetime.now().strftime(" - %Y %m %d %a %p %I:%M:%S")
 	#flask_log = flask_log + str(request.environ.get('HTTP_X_REAL_IP',request.remote_addr))+time+'\n'
@@ -405,7 +430,7 @@ def send():
 
 @app.route('/', methods = ["POST"])
 def control():
-	global log_value,file_name,all_rec_save,user_choice_rec_start,save_video_file,scale
+	global log_value,file_name,all_rec_save,user_choice_rec_start,save_video_file,scale,Client_Download_Photo,Client_Download_Video
 
 	#if float(request.form['data']) <2:
 	#	print ("zoom function activate")
@@ -421,16 +446,17 @@ def control():
 		print (a)
 		timestamp = datetime.datetime.now()
 		test_img,f = video_camera.zoom_object(scale,object_classifier1,False) #save photo
-		p = "{}/{}.png".format("/home/pi/drone_opencv_ardupilot/save/save_file/client_download_photo", 
-			timestamp.strftime("%Y%m%d-%H%M%S"))
-		cv2.imwrite(p,test_img) #SAVEPHOTO#
-		path = '/home/pi/drone_opencv_ardupilot/save/save_file/client_download_photo/'
-		delete_file(path,deadline)
+		pathFile = "{}/{}.png".format(
+                Client_Download_Photo # 사용자 지정에 의한 스크린샷 저장 
+                ,timestamp.strftime("%Y%m%d-%H%M%S")
+                )
+		cv2.imwrite(pathFile,test_img) #SAVEPHOTO#
+		delete_file(Client_Download_Photo,deadline)# 오래된 로그 파일 삭제 
 		log_time = timestamp.strftime("%Y.%m.%d %a %H:%M:%S")
 		log_value += log_time+' - Screenshot success\n'
 		file_name = "{}.{}".format(timestamp.strftime("%Y%m%d-%H%M%S"),"png")
 		print ("cap btn")
-		return send_file(p,mimetype='image/gif',attachment_filename=file_name,as_attachment=True) #save in client pc
+		return send_file(pathFile,mimetype='image/gif',attachment_filename=file_name,as_attachment=True) #save in client pc
 	#log button
 	if request.form['data'] == 'log_btn':
 		print ("log btn")
@@ -470,23 +496,28 @@ def control():
 		#return (render_template_string(TPL,log_value=log_value,user_choice_rec_start=user_choice_rec_start) ,
 		#return send_from_directory('/home/pi/save_file/client_download_video/','20201228-223441.mp4',as_attachment=True)
 		#return render_template_string(TPL,log_value=log_value,user_choice_rec_start=user_choice_rec_start),
-		return send_from_directory('/home/pi/drone_opencv_ardupilot/save/save_file/client_download_video/',
-            str(save_video),as_attachment=True)
+		return send_from_directory(
+            Client_Download_Video # 웹으로 사용자에게 영상 파일 전송 
+            ,str(save_video),as_attachment=True)
 
 	print ("zoom function activate")
 #	print ("ad"+str(request.form['data']))
 	#print ("az"+str(request.form['zoom']))
 	scale = float(request.form['data']) # 0.1-1.0
 	print ("scale :" + str(scale))
-	return render_template_string(TPL,user_choice_rec_start=user_choice_rec_start,scale=scale)
+	return render_template_string(
+                                    TPL
+                                    ,user_choice_rec_start=user_choice_rec_start
+                                    ,scale=scale
+                                )
 
 if __name__ == '__main__':
     # 오브젝트 감지할 때 영상 저장
-    t1 = threading.Thread(target=check_for_objects, args=())
+    t1 = threading.Thread(target=check_for_objects, args=())    #오브젝트를 탐지했을 때
     # 오브젝트를 감지 했을 때 사진 저장
-    t2 = threading.Thread(target=check_for_obj_save_photo, args=())
-    t3 = threading.Thread(target=user_want_rec, args=())
-    t4 = threading.Thread(target=log, args=())
+    t2 = threading.Thread(target=check_for_obj_save_photo, args=()) #목표 사진을 저장하기
+    t3 = threading.Thread(target=user_want_rec, args=()) # 사용자에 의한 저장 
+    t4 = threading.Thread(target=log, args=()) #로그 그리기
 
     t4.daemon = True
     t3.daemon = True
