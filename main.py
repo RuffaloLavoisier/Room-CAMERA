@@ -2,6 +2,7 @@
 #go to folder and start python2
 #ip alarm and send photo
 
+from CheckDirectory import createFolder
 import cv2
 import sys
 #from mail import sendEmail
@@ -35,11 +36,9 @@ app = Flask(__name__)
 app.config['BASIC_AUTH_USERNAME'] = '4321'
 app.config['BASIC_AUTH_PASSWORD'] = '1234'
 app.config['BASIC_AUTH_FORCE'] = False
+  
 
-# dir
-
-#os.path.isdir
-
+# directory path
 Client_Download_Photo = "/save/save_file/client_download_photo"       # /save/save_file/client_download_photo
 Client_Download_Video = "/save/save_file/client_download_video"       # /save/save_file/client_download_video
 Save_All_Video        = "/save/save_file/save_all_video/"             # /save/save_file/save_all_video/
@@ -142,6 +141,9 @@ def user_want_rec():  # Recording start when user clicked button
                 (h, w) = frame_read.shape[:2]
                 save_video_file = timestamp.strftime("%Y%m%d-%H%M%S")
                 print(save_video_file)
+                #check directory
+                createFolder(Client_Download_Video)
+
                 # save path
                 p = "{}/{}.mp4".format(
                     Client_Download_Video  # 사용자 지정 영상 파일 저장 경로 
@@ -172,6 +174,8 @@ def check_for_obj_save_photo():
 
             now = datetime.datetime.now().strftime("%m%d_%H%M%S")
 			
+
+            createFolder(Save_Detect_OP)
             #save detect frame
               #if check obj save but just frame
 			file_save_name = Save_Detect_OP + str(now) + '_obj_frame' + '.png'
@@ -180,6 +184,7 @@ def check_for_obj_save_photo():
 			print (file_save_name)
             delete_file(Save_Detect_OP,deadline)
 
+            createFolder(Save_Detect_P)
             #save normal frame
 			file_save_name = Save_Detect_P + str(now) + '_get_frame' + '.png'
 			test_img = video_camera.zoom_frame(scale,False) #get frame
@@ -197,6 +202,7 @@ def check_for_objects(): #version : detect mode/normal mode
 			frame_read = frame
 			timestamp = datetime.datetime.now()
 			(h,w) = frame_read.shape[:2]
+            createFolder(Save_Detect_Video)
 			DetectVideoFile = "{}/{}.mp4".format(
                 Save_Detect_Video # 겍체 탐지하였을 때 자동 저장 디렉토리
                 ,timestamp.strftime("%Y%m%d-%H%M%S"))
@@ -446,7 +452,8 @@ def control():
 		print (a)
 		timestamp = datetime.datetime.now()
 		test_img,f = video_camera.zoom_object(scale,object_classifier1,False) #save photo
-		pathFile = "{}/{}.png".format(
+		createFolder(Client_Download_Photo) # check directory
+        pathFile = "{}/{}.png".format(
                 Client_Download_Photo # 사용자 지정에 의한 스크린샷 저장 
                 ,timestamp.strftime("%Y%m%d-%H%M%S")
                 )
