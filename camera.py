@@ -22,7 +22,7 @@ class VideoCamera(object):
 
     def get_frame(self):
         frame = self.flip_if_needed(self.vs.read())
-#        frame = imutils.resize(frame, width=600)
+        #  frame = imutils.resize(frame, width=600)
         ret, jpeg = cv2.imencode('.jpg', frame)
         return jpeg.tobytes()
 
@@ -91,15 +91,14 @@ class VideoCamera(object):
 
     def read_frame(self):
         frame = self.flip_if_needed(self.vs.read())
- #       frame = imutils.resize(frame, width=600)
+        # frame = imutils.resize(frame, width=600)
         return frame
 
     def get_object(self, classifier):
         found_objects = False
         frame = self.flip_if_needed(self.vs.read()).copy() 
-  #      frame = imutils.resize(frame, width=600)
+        #frame = imutils.resize(frame, width=600)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
         objects = classifier.detectMultiScale(
             gray,
             scaleFactor=1.1,
@@ -121,8 +120,8 @@ class VideoCamera(object):
     def Detect_in_zoom(self, classifier,zoom_img,state): # model,frame,stream
         found_objects = False
         frame = zoom_img.copy()
-   #     frame = self.flip_if_needed(self.vs.read()).co$
-   #     frame = imutils.resize(frame, width=600)
+        # frame = self.flip_if_needed(self.vs.read()).co$
+        # frame = imutils.resize(frame, width=600)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         objects = classifier.detectMultiScale(
             gray,
@@ -148,7 +147,7 @@ class VideoCamera(object):
          found_objects = False
          frame = self.flip_if_needed(self.vs.read()).copy() 
 
-   #      frame = imutils.resize(frame, width=600)
+        #  frame = imutils.resize(frame, width=600)
 
          gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -165,3 +164,50 @@ class VideoCamera(object):
          for (x, y, w, h) in objects:
              cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
          return (frame,found_objects)
+    
+    def read_object_mix(self, face_classifier, upper_classifier, body_classifier):
+        found_objects = False
+        frame = self.flip_if_needed(self.vs.read()).copy()
+
+        #  frame = imutils.resize(frame, width=600)
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        face = face_classifier.detectMultiScale(  # 감지되는 영역을 찾음
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(30, 30),
+            flags=cv2.CASCADE_SCALE_IMAGE
+        )
+
+        upper = upper_classifier.detectMultiScale(  # 감지되는 영역을 찾음
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(30, 30),
+            flags=cv2.CASCADE_SCALE_IMAGE
+        )
+
+        body = body_classifier.detectMultiScale(  # 감지되는 영역을 찾음
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(30, 30),
+            flags=cv2.CASCADE_SCALE_IMAGE
+            )
+
+        if len(face) + len(upper) + len(body) > 0:  # 값이 있다면
+            found_objects = True
+
+         # Draw a rectangle around the objects
+        for (x, y, w, h) in face:  # 표시
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        for (x, y, w, h) in upper:
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        for (x, y, w, h) in body:
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        return (frame, found_objects)

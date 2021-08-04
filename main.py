@@ -32,7 +32,7 @@ object_classifier1 = cv2.CascadeClassifier(
 object_classifier2 = cv2.CascadeClassifier(
     "models/fullbody_recognition_model.xml")  # an opencv classifier
 object_classifier3 = cv2.CascadeClassifier(
-    "models/uCpperbody_recognition_model.xml")  # an opencv classifier
+    "models/upperbody_recognition_model.xml")  # an opencv classifier
 
 # App Globals (do not edit)
 app = Flask(__name__)
