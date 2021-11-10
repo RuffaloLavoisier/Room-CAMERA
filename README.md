@@ -31,3 +31,5 @@ $ python3 main.py
 ```
 $ ls save/ 
 ```
+
+![photo_log_mail](./img/cctv_mail.png)
