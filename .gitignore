@@ -8,4 +8,7 @@
 /save/save_file/save_detect_photo/photo
 /save/save_file/save_detect_photo/obj_photo
 
+# Tools
+opencv.sh
+install_opencv/
 
