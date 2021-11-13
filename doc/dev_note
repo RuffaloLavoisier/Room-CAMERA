@@ -1,0 +1,36 @@
+          face = face_classifier.detectMultiScale( //감지되는 영역을 찾음
+             gray,
+             scaleFactor=1.1,
+             minNeighbors=5,
+             minSize=(30, 30),
+             flags=cv2.CASCADE_SCALE_IMAGE
+         )
+
+          upper = upper_classifier.detectMultiScale( //감지되는 영역을 찾음
+             gray,
+             scaleFactor=1.1,
+             minNeighbors=5,
+             minSize=(30, 30),
+             flags=cv2.CASCADE_SCALE_IMAGE
+         )
+
+          body = body_classifier.detectMultiScale( //감지되는 영역을 찾음
+             gray,
+             scaleFactor=1.1,
+             minNeighbors=5,
+             minSize=(30, 30),
+             flags=cv2.CASCADE_SCALE_IMAGE  
+         )
+
+         if len(face) + len(upper) + len(body) > 0: //값이 있다면 
+             found_objects = True
+
+         # Draw a rectangle around the objects
+         for (x, y, w, h) in face: //표시
+             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+             
+         for (x, y, w, h) in upper:
+             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+             
+         for (x, y, w, h) in body:
+             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
